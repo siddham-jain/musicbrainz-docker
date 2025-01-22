@@ -71,8 +71,10 @@ services:
       - ${SIR_CONFIG_PATH:-./default/indexer.ini}:/code/config.ini
     restart: unless-stopped
     depends_on:
-      - db
-      - search
+      db:
+        condition: service_started
+      search:
+        condition: service_healthy
 
   search:
     build:
@@ -96,6 +98,12 @@ services:
       - dbdump:/media/dbdump:ro
       - solrdata:/var/solr
       - solrdump:/var/cache/musicbrainz/solr-backups
+    healthcheck:
+      test: ["CMD-SHELL", "perl /usr/local/bin/solr-healthcheck.pl"]
+      start_period: 3m
+      interval: 15s
+      timeout: 10s
+      retries: 10
 
   valkey:
     image: valkey/valkey:9-alpine
